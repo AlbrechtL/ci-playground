@@ -33,5 +33,6 @@ jobs:
 
       - name: Run OpenWrt
         run: |
-          wget 
+          sudo multipass exec ubuntu-vm -- wget https://raw.githubusercontent.com/AlbrechtL/ci-playground/master/docker-compose.yml
+          sudo multipass exec ubuntu-vm -- docker compose up 
           
