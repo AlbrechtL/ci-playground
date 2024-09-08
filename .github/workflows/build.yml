@@ -18,8 +18,8 @@ jobs:
         run: |
             set -x
             sudo snap install multipass
+            sudo multipass find
             sudo multipass launch docker --name ubuntu-vm
-            multipass find
 
       - name: Try VM
         run:  |
