@@ -27,7 +27,11 @@ jobs:
           sudo multipass find
           sudo multipass launch docker --name ubuntu-vm
 
-      - name: Try VM
+      - name: Show VM
         run:  |
           sudo multipass exec ubuntu-vm -- lsb_release -a
+
+      - name: Run OpenWrt
+        run: |
+          wget 
           
