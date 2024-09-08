@@ -1,0 +1,27 @@
+name: Actions CI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install VM
+        run: |
+            set -x
+            sudo snap install multipass
+            multipass launch docker --name ubuntu-vm
+            multipass find
+
+      - name: Try VM
+        run:  |
+          multipass exec ubuntu-vm -- lsb_release -a
+          
