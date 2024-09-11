@@ -32,6 +32,7 @@ jobs:
           sudo multipass exec ubuntu-vm -- lsb_release -a
 
       - name: Run OpenWrt
+        timeout-minutes: 10
         run: |
           sudo multipass exec ubuntu-vm -- wget https://raw.githubusercontent.com/AlbrechtL/ci-playground/master/docker-compose.yml
           sudo multipass exec ubuntu-vm -- docker compose up 
