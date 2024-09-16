@@ -34,6 +34,7 @@ jobs:
       - name: Run OpenWrt
         timeout-minutes: 10
         run: |
+          sudo multipass exec ubuntu-vm -- docker stop portainer # by default portainer is running at port 9000. But we need port 9000
           sudo multipass exec ubuntu-vm -- wget https://raw.githubusercontent.com/AlbrechtL/ci-playground/master/docker-compose.yml
           sudo multipass exec ubuntu-vm -- docker compose up 
           
