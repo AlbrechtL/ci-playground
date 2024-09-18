@@ -45,13 +45,13 @@ jobs:
 
           # Install everthing for pytest
           multipass exec ubuntu-vm -- find .
-          multipass exec ubuntu-vm -- export PATH=$PATH:~/.local/bin
+          #multipass exec ubuntu-vm -- export PATH=$PATH:~/.local/bin # not working
           multipass exec ubuntu-vm -- pip install -r test/requirements.txt
 
       - name: Run tests
         #timeout-minutes: 10
         run: |
           # Run pytest
-          multipass exec ubuntu-vm cd test/ && pytest
+          multipass exec ubuntu-vm cd test/ && .local/bin/pytest
 
           
