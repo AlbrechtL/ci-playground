@@ -122,7 +122,17 @@ def test_script_server_start(docker_ip, docker_services):
 
     assert get_service_status('script-server') == 'RUNNING'
 
-def test_openwrt_ping(docker_ip, docker_services):
+def test_openwrt_booted(docker_ip, docker_services):
+    docker_services.wait_until_responsive(
+        timeout=90.0, pause=1, check=lambda: is_openwrt_loaded()
+    )
+
+    info = get_openwrt_info()
+    print(info)
+
+    assert 'OpenWrt' == info['name']
+
+def test_openwrt_lan_veth_pair(docker_ip, docker_services):
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.5, check=lambda: is_service_started('openwrt')
     )
@@ -132,13 +142,3 @@ def test_openwrt_ping(docker_ip, docker_services):
     response = polling2.poll(lambda: os.system("ping -c 1 172.31.1.1") == 0, step=1, timeout=90)
     
     assert response == True
-
-def test_openwrt_loaded(docker_ip, docker_services):
-    docker_services.wait_until_responsive(
-        timeout=90.0, pause=1, check=lambda: is_openwrt_loaded()
-    )
-
-    info = get_openwrt_info()
-    print(info)
-
-    assert 'OpenWrt' == info['name']
