@@ -45,8 +45,8 @@ jobs:
 
           # Install everthing for pytest
           multipass exec ubuntu-vm -- find .
+          multipass exec ubuntu-vm -- export PATH=$PATH:~/.local/bin
           multipass exec ubuntu-vm -- pip install -r test/requirements.txt
-          multipass exec ubuntu-vm -- PATH=$PATH:~/.local/bin
 
       - name: Run tests
         #timeout-minutes: 10
