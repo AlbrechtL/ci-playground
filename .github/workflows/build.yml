@@ -34,8 +34,6 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-        #with:
-        #  path: multipass/ubuntu-vm
 
       - name: Prepare VM
         timeout-minutes: 10
@@ -50,5 +48,5 @@ jobs:
 
           # Install everthing for pytest
           multipass exec ubuntu-vm -- find .
-          multipass exec ubuntu-vm -- pip install -r ubuntu-vm/test/requirements.txt
+          multipass exec ubuntu-vm -- pip install -r test/requirements.txt
           
