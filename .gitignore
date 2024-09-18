@@ -1,5 +1,5 @@
 .github/*
 .pytest_cache/
 .vscode/
-tests/__pycache__/
-tests/.pytest_cache/
+test/tests/__pycache__/
+test/tests/.pytest_cache/
