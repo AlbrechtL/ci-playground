@@ -50,7 +50,7 @@ jobs:
       - name: Run tests
         #timeout-minutes: 10
         run: |
-          cd test/
-          pytest
-          
+          # Run pytest
+          multipass exec ubuntu-vm cd test/ && pytest
+
           
