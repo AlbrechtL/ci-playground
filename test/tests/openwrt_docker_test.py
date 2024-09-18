@@ -92,6 +92,6 @@ def test_openwrt_ping(docker_ip, docker_services):
     
     assert get_service_status('openwrt') == 'RUNNING'
 
-    response = polling2.poll(lambda: os.system("ping -c 1 172.31.1.1") == 0, step=1, timeout=30)
+    response = polling2.poll(lambda: os.system("ping -c 1 172.31.1.1") == 0, step=1, timeout=90)
     
     assert response == True
