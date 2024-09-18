@@ -36,11 +36,11 @@ jobs:
         with:
           path: multipass/ubuntu-vm
 
-      - name: Run OpenWrt
+      - name: Prepare VM
         timeout-minutes: 10
         run: |
           multipass exec ubuntu-vm -- docker stop portainer # by default portainer is running at port 9000. But we need port 9000
-          multipass exec ubuntu-vm -- sudo apt install python3-pip python-is-python3
+          multipass exec ubuntu-vm -- sudo apt-get -y install python3-pip python-is-python3
           #multipass exec ubuntu-vm -- wget https://raw.githubusercontent.com/AlbrechtL/ci-playground/master/docker-compose.yml
           #multipass exec ubuntu-vm -- docker compose up 
           multipass exec ubuntu-vm -- pip install -r ubuntu-vm/test/requirements.txt
