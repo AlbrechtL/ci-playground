@@ -21,6 +21,7 @@ jobs:
         run: |
           set -x
           sudo snap install multipass
+          sudo chmod a+w /var/snap/multipass/common/multipass_socket # Fix 'multipass socket access denied'
           multipass find
           multipass launch docker --name ubuntu-vm
 
