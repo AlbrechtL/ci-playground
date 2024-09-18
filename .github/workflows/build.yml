@@ -52,6 +52,6 @@ jobs:
         #timeout-minutes: 10
         run: |
           # Run pytest
-          multipass exec ubuntu-vm cd test/ && .local/bin/pytest
+          multipass exec ubuntu-vm cd test/ && ~/.local/bin/pytest
 
           
