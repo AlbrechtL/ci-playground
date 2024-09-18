@@ -1,5 +1,4 @@
 .github/*
 .pytest_cache/
-.vscode/
 test/tests/__pycache__/
 test/tests/.pytest_cache/

@@ -1,7 +1,9 @@
+import pytest
+
 import os
 import subprocess
-import pytest
 import polling2
+import json
 
 def is_container_running():
     # Get current service list from supervisor
@@ -51,43 +53,78 @@ def is_service_started(service):
     else:
         return False
     
+def get_openwrt_info():
+    # Get current service list from supervisor
+    process = subprocess.run(['docker','exec','openwrt','sh','-c',r"""echo -ne '{"execute":"guest-get-osinfo"}' | nc -w 1 -U /run/qga.sock"""], 
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, 
+                         universal_newlines=True)
+    
+    if process.returncode != 0:
+        return None
+    
+    if process.stdout == "":
+        return None
+    
+    # Assume json here, parse it
+    info = json.loads(process.stdout)
+
+    if 'return' not in info:
+        return None
+    
+    if 'name' not in info['return']:
+        return None
+
+    return info['return']
+
+def is_openwrt_loaded():
+    service_status = get_openwrt_info()
+
+    if service_status != None:
+        return True
+    else:
+        return False
+
+
+# Tests
+
 def test_basic_container_start(docker_ip, docker_services):
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_container_running()
+        timeout=30.0, pause=0.5, check=lambda: is_container_running()
     )
     return
 
 def test_nginx_start(docker_ip, docker_services):
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_service_started('nginx')
+        timeout=30.0, pause=0.5, check=lambda: is_service_started('nginx')
     )
     
     assert get_service_status('nginx') == 'RUNNING'
 
 def test_openwrt_start(docker_ip, docker_services):
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_service_started('openwrt')
+        timeout=30.0, pause=0.5, check=lambda: is_service_started('openwrt')
     )
     
     assert get_service_status('openwrt') == 'RUNNING'
 
 def test_caddy_start(docker_ip, docker_services):
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_service_started('caddy')
+        timeout=30.0, pause=0.5, check=lambda: is_service_started('caddy')
     )
 
     assert get_service_status('caddy') == 'RUNNING'
 
 def test_script_server_start(docker_ip, docker_services):
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_service_started('script-server')
+        timeout=30.0, pause=0.5, check=lambda: is_service_started('script-server')
     )
 
     assert get_service_status('script-server') == 'RUNNING'
 
 def test_openwrt_ping(docker_ip, docker_services):
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: is_service_started('openwrt')
+        timeout=30.0, pause=0.5, check=lambda: is_service_started('openwrt')
     )
     
     assert get_service_status('openwrt') == 'RUNNING'
@@ -95,3 +132,13 @@ def test_openwrt_ping(docker_ip, docker_services):
     response = polling2.poll(lambda: os.system("ping -c 1 172.31.1.1") == 0, step=1, timeout=90)
     
     assert response == True
+
+def test_openwrt_loaded(docker_ip, docker_services):
+    docker_services.wait_until_responsive(
+        timeout=90.0, pause=1, check=lambda: is_openwrt_loaded()
+    )
+
+    info = get_openwrt_info()
+    print(info)
+
+    assert 'OpenWrt' == info['name']
