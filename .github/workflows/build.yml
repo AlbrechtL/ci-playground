@@ -24,6 +24,7 @@ jobs:
           sudo chmod a+w /var/snap/multipass/common/multipass_socket # Fix 'multipass socket access denied'
           multipass find
           multipass launch docker --name ubuntu-vm
+          multipass mount $GITHUB_WORKSPACE ubuntu-vm
 
       - name: Show VM and and enviroments variables
         run:  |
@@ -33,8 +34,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          path: multipass/ubuntu-vm
+        #with:
+        #  path: multipass/ubuntu-vm
 
       - name: Prepare VM
         timeout-minutes: 10
