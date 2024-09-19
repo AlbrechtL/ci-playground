@@ -152,14 +152,14 @@ def is_openwrt_booted():
 
 # ************************ Tests ************************
 
-def test_basic_container_start(docker_ip, docker_services):
+def test_basic_container_start(docker_services):
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.5, check=lambda: is_container_running()
     )
     return
 
 
-def test_nginx_start(docker_ip, docker_services):
+def test_nginx_start(docker_services):
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.5, check=lambda: is_service_started('nginx')
     )
@@ -167,7 +167,7 @@ def test_nginx_start(docker_ip, docker_services):
     assert get_service_status('nginx') == 'RUNNING'
 
 
-def test_openwrt_start(docker_ip, docker_services):
+def test_openwrt_start(docker_services):
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.5, check=lambda: is_service_started('openwrt')
     )
@@ -175,7 +175,7 @@ def test_openwrt_start(docker_ip, docker_services):
     assert get_service_status('openwrt') == 'RUNNING'
 
 
-def test_caddy_start(docker_ip, docker_services):
+def test_caddy_start(docker_services):
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.5, check=lambda: is_service_started('caddy')
     )
@@ -183,7 +183,7 @@ def test_caddy_start(docker_ip, docker_services):
     assert get_service_status('caddy') == 'RUNNING'
 
 
-def test_script_server_start(docker_ip, docker_services):
+def test_script_server_start(docker_services):
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.5, check=lambda: is_service_started('script-server')
     )
@@ -191,7 +191,7 @@ def test_script_server_start(docker_ip, docker_services):
     assert get_service_status('script-server') == 'RUNNING'
 
 
-def test_openwrt_booted(docker_ip, docker_services):
+def test_openwrt_booted(docker_services):
     docker_services.wait_until_responsive(
         timeout=90.0, pause=1, check=lambda: is_openwrt_booted()
     )
@@ -202,7 +202,7 @@ def test_openwrt_booted(docker_ip, docker_services):
     assert 'OpenWrt' == info['name']
 
 
-def test_openwrt_lan_veth_pair(docker_ip, docker_services):
+def test_openwrt_lan_veth_pair(docker_services):
     docker_services.wait_until_responsive(
         timeout=90.0, pause=1, check=lambda: is_openwrt_booted()
     )
@@ -215,7 +215,7 @@ def test_openwrt_lan_veth_pair(docker_ip, docker_services):
     pass
 
 
-def test_openwrt_wan_host(docker_ip, docker_services):
+def test_openwrt_wan_host(docker_services):
     docker_services.wait_until_responsive(
         timeout=90.0, pause=1, check=lambda: is_openwrt_booted()
     )
@@ -227,7 +227,7 @@ def test_openwrt_wan_host(docker_ip, docker_services):
     assert response['exitcode'] == 0
 
 
-def test_openwrt_luci_forwarding(docker_ip, docker_services):
+def test_openwrt_luci_forwarding(docker_services):
     docker_services.wait_until_responsive(
         timeout=90.0, pause=1, check=lambda: is_openwrt_booted()
     )
