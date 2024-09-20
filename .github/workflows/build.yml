@@ -58,6 +58,14 @@ jobs:
           multipass exec router-vm -- find .
           #multipass exec router-vm -- export PATH=$PATH:~/.local/bin # not working
           multipass exec router-vm -- pip install -r test/requirements.txt
+          
+          multipass exec router-vm -- ip addr
+
+          # Prepare WAN VM
+          multipass exec wan-vm -- ip addr
+
+          # Prepare WAN VM
+          multipass exec lan-vm -- ip addr
 
       - name: Run tests
         #timeout-minutes: 10
