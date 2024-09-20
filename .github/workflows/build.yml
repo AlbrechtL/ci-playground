@@ -34,8 +34,8 @@ jobs:
           multipass launch docker --network wannetvm --network lannetvm --name router-vm
           multipass mount $GITHUB_WORKSPACE router-vm
 
-          multipass --network wannetvm --name wan-vm
-          multipass --network lannetvm --name lan-vm
+          multipass launch --network wannetvm --name wan-vm
+          multipass launch --network lannetvm --name lan-vm
 
       - name: Show VM and and enviroments variables
         run:  |
