@@ -258,24 +258,28 @@ def test_openwrt_lan_veth_pair(docker_services):
 
 
 @pytest.mark.parametrize("parameter", 
-    [('WAN_IF','host'),('WAN_IF','none')], indirect=True,
-    ids=['WAN_IF=host', 'WAN_IF=none'])
+    [('WAN_IF','host'),('WAN_IF','none'),('WAN_IF','ens4')], indirect=True,
+    ids=['WAN_IF=host', 'WAN_IF=none', 'WAN_IF=ens4'])
 def test_openwrt_wan(docker_services, parameter):
     docker_services.wait_until_responsive(
         timeout=90.0, pause=1, check=lambda: is_openwrt_booted()
     )
     
-    if parameter[1] == 'host':
-        # For some reason ping is not working at github actions, so use nslookup to test internet connection
-        response = run_openwrt_shell_command("nslookup", "google.com")
-        assert response['exitcode'] == 0
-        return
+    match parameter[1]:
+        case 'host':
+            # For some reason ping is not working at github actions, so use nslookup to test internet connection
+            response = run_openwrt_shell_command("nslookup", "google.com")
+            assert response['exitcode'] == 0
+            return
 
-    if parameter[1] == 'none':
-        # We are looking for eth1. It should not existing
-        response = run_openwrt_shell_command("ip", "addr")        
-        assert ('eth1' in response['out-data']) == False
-        return
+        case 'none':
+            # We are looking for eth1. It should not existing
+            response = run_openwrt_shell_command("ip", "addr")        
+            assert ('eth1' in response['out-data']) == False
+            return
+        
+        case _: # Usage of real Ethernet interface e.g. 'eth0'
+            return
 
     assert False, 'Unknown parameter'
 
