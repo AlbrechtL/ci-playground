@@ -17,41 +17,52 @@ jobs:
             sudo udevadm control --reload-rules
             sudo udevadm trigger --name-match=kvm
 
-      - name: Install VM
+      - name: Install VMs
         run: |
           set -x
           sudo snap install multipass
           sudo chmod a+w /var/snap/multipass/common/multipass_socket # Fix 'multipass socket access denied'
           multipass find
-          multipass launch docker --name ubuntu-vm
-          multipass mount $GITHUB_WORKSPACE ubuntu-vm
+
+          # Set up some bridges for the VMs
+          sudo ip link add lannetvm type bridge
+          sudo ip link add wannetvm type bridge
+          sudo ip link set up lannetvm
+          sudo ip link set up wannetvm
+
+          # Start VMs
+          multipass launch docker --network wannetvm --network lannetvm --name router-vm
+          multipass mount $GITHUB_WORKSPACE router-vm
+
+          multipass --network wannetvm --name wan-vm
+          multipass --network lannetvm --name lan-vm
 
       - name: Show VM and and enviroments variables
         run:  |
           export
-          multipass exec ubuntu-vm -- lsb_release -a
+          multipass exec router-vm -- lsb_release -a
           multipass info
 
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare VM
+      - name: Prepare VMs
         run: |
           # By default portainer is running at port 9000. But we need port 9000
-          multipass exec ubuntu-vm -- docker stop portainer
+          multipass exec router-vm -- docker stop portainer
 
           # Install python
-          multipass exec ubuntu-vm -- sudo apt-get -y install python3-pip python-is-python3
+          multipass exec router-vm -- sudo apt-get -y install python3-pip python-is-python3
 
           # Install everthing for pytest
-          multipass exec ubuntu-vm -- find .
-          #multipass exec ubuntu-vm -- export PATH=$PATH:~/.local/bin # not working
-          multipass exec ubuntu-vm -- pip install -r test/requirements.txt
+          multipass exec router-vm -- find .
+          #multipass exec router-vm -- export PATH=$PATH:~/.local/bin # not working
+          multipass exec router-vm -- pip install -r test/requirements.txt
 
       - name: Run tests
         #timeout-minutes: 10
         run: |
           # Run pytest
-          multipass exec ubuntu-vm -- sh -c 'cd test/ && ~/.local/bin/pytest -v -s'
+          multipass exec router-vm -- sh -c 'cd test/ && ~/.local/bin/pytest -v -s'
 
           
