@@ -258,7 +258,7 @@ def test_openwrt_lan(docker_services, parameter):
                 response = polling2.poll(lambda: os.system("ping -c 1 172.31.1.1 >/dev/null") == 0, step=1, timeout=90)
             except polling2.TimeoutException:
                 assert True, 'ping timeout'
-                return
+            return
 
         case _: # Usage of real Ethernet interface e.g. 'eth0'
             # This test is most likely only working in a github action enviroment because multiple VM are necessary to test it. See the action file, please
