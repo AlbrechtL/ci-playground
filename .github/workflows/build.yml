@@ -67,7 +67,7 @@ jobs:
           echo '******** wan-vm IPs ********'
           multipass exec wan-vm -- sudo ip addr add 192.168.22.1/24 dev ens4
           multipass exec wan-vm -- ip addr
-          multipass exec wan-vm -- sudo sh -c 'apt update && apt install -y isc-dhcp-server && echo -e "default-lease-time 600\nmax-lease-time 7200\nsubnet 192.168.22.0 netmask 255.255.255.0 {\n  range 192.168.22.100 192.168.22.200;\n  option routers 192.168.22.1;\n  option domain-name-servers 8.8.8.8, 8.8.4.4;\n  option domain-name \"example.org\";\n}" > /etc/dhcp/dhcpd.conf && systemctl enable isc-dhcp-server && systemctl restart isc-dhcp-server'
+          multipass exec wan-vm -- sudo sh -c 'apt-get update && apt-get install -y isc-dhcp-server && echo "default-lease-time 600;\nmax-lease-time 7200;\nsubnet 192.168.22.0 netmask 255.255.255.0 {\n  range 192.168.22.100 192.168.22.200;\n  option routers 192.168.22.1;\n  option domain-name-servers 8.8.8.8, 8.8.4.4;\n  option domain-name \"example.org\";\n}" > /etc/dhcp/dhcpd.conf && systemctl enable isc-dhcp-server && systemctl restart isc-dhcp-server'
           multipass exec wan-vm -- cat /etc/dhcp/dhcpd.conf
 
           # Prepare WAN VM
