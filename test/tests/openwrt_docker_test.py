@@ -244,17 +244,30 @@ def test_openwrt_booted(docker_services):
     assert 'OpenWrt' == info['name']
 
 
-def test_openwrt_lan_veth_pair(docker_services):
+@pytest.mark.parametrize("parameter", 
+    [('LAN_IF','veth'),('LAN_IF','ens5')], indirect=True,
+    ids=['LAN_IF=veth', 'LAN_IF=ens5'])
+def test_openwrt_lan(docker_services, parameter):
     docker_services.wait_until_responsive(
         timeout=90.0, pause=1, check=lambda: is_openwrt_booted()
     )
     
-    try:
-        response = polling2.poll(lambda: os.system("ping -c 1 172.31.1.1 >/dev/null") == 0, step=1, timeout=90)
-    except polling2.TimeoutException:
-        assert True, 'ping timeout'
+    match parameter[1]:
+        case 'veth':
+            try:
+                response = polling2.poll(lambda: os.system("ping -c 1 172.31.1.1 >/dev/null") == 0, step=1, timeout=90)
+            except polling2.TimeoutException:
+                assert True, 'ping timeout'
+                return
+
+        case _: # Usage of real Ethernet interface e.g. 'eth0'
+            # This test is most likely only working in a github action enviroment because multiple VM are necessary to test it. See the action file, please
+            # Try to ping LAN-VM
+            response = run_openwrt_shell_command("ping", "-c1", "-W2", "-w2", "172.31.1.2")
+            assert response['exitcode'] == 0
+            return
     
-    return
+    assert False, 'Unknown parameter'
 
 
 @pytest.mark.parametrize("parameter", 
@@ -279,6 +292,15 @@ def test_openwrt_wan(docker_services, parameter):
             return
         
         case _: # Usage of real Ethernet interface e.g. 'eth0'
+            # This test is most likely only working in a github action enviroment because multiple VM are necessary to test it. See the action file, please
+            # Try to get IP address from WAN-VM
+            response = run_openwrt_shell_command("udhcpc", "-i", "eth1")
+            assert ('udhcpc: setting default routers: 192.168.22.1' in response['out-data']) == True
+
+            # Finally try Internet
+            response = run_openwrt_shell_command("nslookup", "google.com")
+            assert response['exitcode'] == 0
+
             return
 
     assert False, 'Unknown parameter'
