@@ -59,12 +59,15 @@ jobs:
           #multipass exec router-vm -- export PATH=$PATH:~/.local/bin # not working
           multipass exec router-vm -- pip install -r test/requirements.txt
           
+          echo '******** router-vm IPs ********'
           multipass exec router-vm -- ip addr
 
           # Prepare WAN VM
+          echo '******** wan-vm IPs ********'
           multipass exec wan-vm -- ip addr
 
           # Prepare WAN VM
+          echo '******** lan-vm IPs ********'
           multipass exec lan-vm -- ip addr
 
       - name: Run tests
