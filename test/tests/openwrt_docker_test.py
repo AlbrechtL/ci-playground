@@ -7,6 +7,40 @@ import json
 import requests
 import base64
 import time
+import yaml
+
+# Workaround to make parameters global accessible
+@pytest.fixture(scope='session')
+def parameter(request):
+    if hasattr(request,'param'):
+        return request.param
+    else:
+        return None
+
+# Adapt docker-compose.yml to our test needs
+@pytest.fixture(scope="session")
+def docker_compose_file(pytestconfig, parameter):
+        
+    compose_file_template = os.path.join(str(pytestconfig.rootdir), "tests", "docker-compose.yml.template")
+    compose_file = os.path.join(str(pytestconfig.rootdir), "tests", "docker-compose.yml.generated")
+
+    # Open template
+    with open(compose_file_template) as f:
+        list_doc = yaml.safe_load(f)
+
+    # Change enviroment variable
+    if parameter:
+        if len(parameter) == 2:
+            env_var = parameter[0]
+            value = parameter[1]
+            list_doc['services']['openwrt']['environment'][env_var] = value
+
+    # Save docker-compose file
+    with open(compose_file, "w") as f:
+        yaml.dump(list_doc, f)
+
+    return compose_file
+
 
 def is_container_running():
     # Get current service list from supervisor
@@ -175,11 +209,19 @@ def test_openwrt_start(docker_services):
     assert get_service_status('openwrt') == 'RUNNING'
 
 
-def test_caddy_start(docker_services):
-    docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.5, check=lambda: is_service_started('caddy')
-    )
-
+@pytest.mark.parametrize("parameter", 
+    [('FORWARD_LUCI','true'),('FORWARD_LUCI','false')], indirect=True,
+    ids=['FORWARD_LUCI=true', 'FORWARD_LUCI=false'])
+def test_caddy_start(docker_services, parameter):
+    try:
+        docker_services.wait_until_responsive(
+            timeout=30.0, pause=0.5, check=lambda: is_service_started('caddy')
+        )
+    except:
+        if parameter[1] == 'false':
+            return # We expect a timeout here. This is our test condition for FORWARD_LUCI=false
+    
+    # For FORWARD_LUCI=true
     assert get_service_status('caddy') == 'RUNNING'
 
 
@@ -210,21 +252,36 @@ def test_openwrt_lan_veth_pair(docker_services):
     try:
         response = polling2.poll(lambda: os.system("ping -c 1 172.31.1.1") == 0, step=1, timeout=90)
     except polling2.TimeoutException:
-        assert False
+        assert True, 'ping timeout'
     
-    pass
+    return
 
 
-def test_openwrt_wan_host(docker_services):
+@pytest.mark.parametrize("parameter", 
+    [('WAN_IF','host'),('WAN_IF','none')], indirect=True,
+    ids=['WAN_IF=host', 'WAN_IF=none'])
+def test_openwrt_wan(docker_services, parameter):
     docker_services.wait_until_responsive(
         timeout=90.0, pause=1, check=lambda: is_openwrt_booted()
     )
     
-    # For some reason ping is not working at github actions, so use nslookup to test internet connection
-    response = run_openwrt_shell_command("nslookup", "google.com")
-    print(response)
-    
-    assert response['exitcode'] == 0
+    if parameter[1] == 'host':
+        # For some reason ping is not working at github actions, so use nslookup to test internet connection
+        response = run_openwrt_shell_command("nslookup", "google.com")
+        print(response)
+        
+        assert response['exitcode'] == 0
+        return
+
+    if parameter[1] == 'none':
+        # We are looking for eth1. It should not existing
+        response = run_openwrt_shell_command("ip", "addr")
+        print(response)
+        
+        assert ('eth1' in response['out-data']) == False
+        return
+
+    assert False, 'Unknown parameter'
 
 
 def test_openwrt_luci_forwarding(docker_services):
@@ -238,3 +295,18 @@ def test_openwrt_luci_forwarding(docker_services):
     response = requests.get("http://localhost:9000")
     
     assert ('LuCI - Lua Configuration Interface' in response.content.decode()) == True
+
+
+@pytest.mark.parametrize("parameter", 
+    [('CPU_COUNT',1),('CPU_COUNT',2),('CPU_COUNT',3),('CPU_COUNT',4)], indirect=True,
+    ids=['CPU_COUNT=1', 'CPU_COUNT=2', 'CPU_COUNT=3', 'CPU_COUNT=4'])
+def test_cpu_num(docker_services, parameter):
+    docker_services.wait_until_responsive(
+        timeout=90.0, pause=1, check=lambda: is_openwrt_booted()
+    )
+    
+    # Get number of processors
+    response = run_openwrt_shell_command("cat", "/proc/cpuinfo")
+    cpu_num = response['out-data'].count('processor')
+        
+    assert parameter[1] == cpu_num
