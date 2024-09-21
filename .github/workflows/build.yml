@@ -33,11 +33,11 @@ jobs:
 
           # Start VMs
           # Multipass and the OpenWrt container are using the same MAC QUI 52:54:00 which creates error. Let's use differnet MAC addresses here
-          multipass launch docker --network name=wannetvm,mac=06:00:00:11:22:33 --network name=lannetvm,mac=06:00:00:44:55:66 --name router-vm
+          sudo multipass launch docker --network name=wannetvm,mac=06:00:00:11:22:33 --network name=lannetvm,mac=06:00:00:44:55:66 --name router-vm
           multipass mount $GITHUB_WORKSPACE router-vm
 
-          multipass launch --network wannetvm --name wan-vm
-          multipass launch --network lannetvm --name lan-vm
+          sudo multipass launch --network wannetvm --name wan-vm
+          sudo multipass launch --network lannetvm --name lan-vm
 
       - name: Show VM and and enviroments variables
         run:  |
