@@ -27,8 +27,8 @@ jobs:
           # Set up some bridges for the VMs
           sudo ip link add lannetvm type bridge
           sudo ip link add wannetvm type bridge
-          sudo ip link set up lannetvm
-          sudo ip link set up wannetvm
+          sudo ip link set dev lannetvm up
+          sudo ip link set dev wannetvm up
 
           # Start VMs
           # Multipass and the OpenWrt container are using the same MAC QUI 52:54:00 which creates error. Let's use differnet MAC addresses here
