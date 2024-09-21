@@ -31,6 +31,9 @@ jobs:
           sudo ip link set dev wannetvm up
           ip addr
 
+          # We need to disable the firewall otherwise the tap devices are not working properly
+          sudo ufw disable
+
           # Start VMs
           # Multipass and the OpenWrt container are using the same MAC QUI 52:54:00 which creates error. Let's use differnet MAC addresses here
           multipass launch docker --network name=wannetvm,mac=06:00:00:11:22:33 --network name=lannetvm,mac=06:00:00:44:55:66 --name router-vm
@@ -86,21 +89,21 @@ jobs:
           echo '******** host IPs ********'
           ip addr
           sudo ufw status
-          sudo ufw disable
 
           echo '******** router-vm IPs ********'
           multipass exec router-vm -- sudo ip addr add 192.168.22.99/24 dev ens4
           multipass exec router-vm -- sudo ip addr add 172.31.1.99/24 dev ens5
           multipass exec router-vm -- ip addr
 
-          multipass exec router-vm -- ping -c 1 192.168.22.1
-          multipass exec router-vm -- ping -c 1 172.31.1.2
+          echo '******** Test connection between router-vm, lan-vm and wan-vm ********'
+          multipass exec router-vm -- ping -c 1 192.168.22.1 # to wan-vm
+          multipass exec router-vm -- ping -c 1 172.31.1.2 # to lan-vm
 
 
       - name: Run tests
         #timeout-minutes: 10
         run: |
           # Run pytest
-          multipass exec router-vm -- sh -c 'cd test/ && ~/.local/bin/pytest -v -s -k test_openwrt_lan'
+          multipass exec router-vm -- sh -c 'cd test/ && ~/.local/bin/pytest -v -s'
 
           
