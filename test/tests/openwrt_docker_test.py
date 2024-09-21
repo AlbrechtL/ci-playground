@@ -263,7 +263,10 @@ def test_openwrt_lan(docker_services, parameter):
         case _: # Usage of real Ethernet interface e.g. 'eth0'
             # This test is most likely only working in a github action enviroment because multiple VM are necessary to test it. See the action file, please
             # Try to ping LAN-VM
+            response = run_openwrt_shell_command("ip", "addr")
+            print(response['out-data'])
             response = run_openwrt_shell_command("ping", "-c1", "-W2", "-w2", "172.31.1.2")
+            print(response)
             assert response['exitcode'] == 0
             return
     

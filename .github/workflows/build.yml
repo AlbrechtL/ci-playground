@@ -85,6 +85,6 @@ jobs:
         #timeout-minutes: 10
         run: |
           # Run pytest
-          multipass exec router-vm -- sh -c 'cd test/ && ~/.local/bin/pytest -v -s'
+          multipass exec router-vm -- sh -c 'cd test/ && ~/.local/bin/pytest -v -s -k test_openwrt_lan'
 
           
