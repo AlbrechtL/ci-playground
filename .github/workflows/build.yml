@@ -93,14 +93,14 @@ jobs:
           multipass exec router-vm -- sudo ip addr add 172.31.1.99/24 dev ens5
           multipass exec router-vm -- ip addr
 
-          #multipass exec router-vm -- ping -c 1 192.168.22.1
+          multipass exec router-vm -- ping -c 1 192.168.22.1
           multipass exec router-vm -- ping -c 1 172.31.1.2
 
 
-      #- name: Run tests
-      #  #timeout-minutes: 10
-      #  run: |
-      #    # Run pytest
-      #    multipass exec router-vm -- sh -c 'cd test/ && ~/.local/bin/pytest -v -s -k test_openwrt_lan'
+      - name: Run tests
+        #timeout-minutes: 10
+        run: |
+          # Run pytest
+          multipass exec router-vm -- sh -c 'cd test/ && ~/.local/bin/pytest -v -s -k test_openwrt_lan'
 
           
