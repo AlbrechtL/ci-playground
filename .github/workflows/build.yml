@@ -78,7 +78,7 @@ jobs:
 
           # Prepare WAN VM
           echo '******** lan-vm IPs ********'
-          multipass exec wan-vm -- sudo ip addr add 172.31.1.2/24 dev ens4
+          multipass exec lan-vm -- sudo ip addr add 172.31.1.2/24 dev ens4
           multipass exec lan-vm -- ip addr
 
       - name: Run tests
