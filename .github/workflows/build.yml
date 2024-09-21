@@ -22,7 +22,7 @@ jobs:
           set -x
           sudo snap install multipass --edge # Edge is necessary to get 1.15 dev because of networks support
           sudo chmod a+w /var/snap/multipass/common/multipass_socket # Fix 'multipass socket access denied'
-          multipass find
+          sudo multipass find
 
           # Set up some bridges for the VMs
           sudo ip link add lannetvm type bridge
@@ -34,7 +34,7 @@ jobs:
           # Start VMs
           # Multipass and the OpenWrt container are using the same MAC QUI 52:54:00 which creates error. Let's use differnet MAC addresses here
           sudo multipass launch docker --network name=wannetvm,mac=06:00:00:11:22:33 --network name=lannetvm,mac=06:00:00:44:55:66 --name router-vm
-          multipass mount $GITHUB_WORKSPACE router-vm
+          sudo multipass mount $GITHUB_WORKSPACE router-vm
 
           sudo multipass launch --network wannetvm --name wan-vm
           sudo multipass launch --network lannetvm --name lan-vm
@@ -42,8 +42,8 @@ jobs:
       - name: Show VM and and enviroments variables
         run:  |
           export
-          multipass exec router-vm -- lsb_release -a
-          multipass info
+          sudo multipass exec router-vm -- lsb_release -a
+          sudo multipass info
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,48 +51,48 @@ jobs:
       - name: Prepare VMs
         run: |
           # By default portainer is running at port 9000. But we need port 9000
-          multipass exec router-vm -- docker stop portainer
+          sudo multipass exec router-vm -- docker stop portainer
 
           # Install python
-          multipass exec router-vm -- sudo apt-get -y install python3-pip python-is-python3
+          sudo multipass exec router-vm -- sudo apt-get -y install python3-pip python-is-python3
 
           # Install everthing for pytest
-          multipass exec router-vm -- find .
+          sudo multipass exec router-vm -- find .
           #multipass exec router-vm -- export PATH=$PATH:~/.local/bin # not working
-          multipass exec router-vm -- pip install -r test/requirements.txt
+          sudo multipass exec router-vm -- pip install -r test/requirements.txt
           
           echo '******** router-vm IPs ********'
-          multipass exec router-vm -- ip addr
+          sudo multipass exec router-vm -- ip addr
 
           # Prepare WAN VM
           echo '******** wan-vm IPs ********'
           # Add IP address
-          multipass exec wan-vm -- sudo ip addr add 192.168.22.1/24 dev ens4
-          multipass exec wan-vm -- ip addr
+          sudo multipass exec wan-vm -- sudo ip addr add 192.168.22.1/24 dev ens4
+          sudo multipass exec wan-vm -- ip addr
           # Install DHCP server
-          multipass exec wan-vm -- sudo sh -c 'apt-get update && apt-get install -y isc-dhcp-server && echo "default-lease-time 600;\nmax-lease-time 7200;\nsubnet 192.168.22.0 netmask 255.255.255.0 {\n  range 192.168.22.100 192.168.22.200;\n  option routers 192.168.22.1;\n  option domain-name-servers 8.8.8.8, 8.8.4.4;\n  option domain-name \"example.org\";\n}" > /etc/dhcp/dhcpd.conf && systemctl enable isc-dhcp-server && systemctl restart isc-dhcp-server'
-          multipass exec wan-vm -- cat /etc/dhcp/dhcpd.conf
+          sudo multipass exec wan-vm -- sudo sh -c 'apt-get update && apt-get install -y isc-dhcp-server && echo "default-lease-time 600;\nmax-lease-time 7200;\nsubnet 192.168.22.0 netmask 255.255.255.0 {\n  range 192.168.22.100 192.168.22.200;\n  option routers 192.168.22.1;\n  option domain-name-servers 8.8.8.8, 8.8.4.4;\n  option domain-name \"example.org\";\n}" > /etc/dhcp/dhcpd.conf && systemctl enable isc-dhcp-server && systemctl restart isc-dhcp-server'
+          sudo multipass exec wan-vm -- cat /etc/dhcp/dhcpd.conf
           # Enable NAT
-          multipass exec wan-vm -- sudo modprobe iptable_nat
-          multipass exec wan-vm -- sudo iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE
-          multipass exec wan-vm -- sudo sysctl -w net.ipv4.ip_forward=1
+          sudo multipass exec wan-vm -- sudo modprobe iptable_nat
+          sudo multipass exec wan-vm -- sudo iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE
+          sudo multipass exec wan-vm -- sudo sysctl -w net.ipv4.ip_forward=1
 
           # Prepare WLAN VM
           echo '******** lan-vm IPs ********'
-          multipass exec lan-vm -- sudo ip addr add 172.31.1.2/24 dev ens4
-          multipass exec lan-vm -- ip addr
+          sudo multipass exec lan-vm -- sudo ip addr add 172.31.1.2/24 dev ens4
+          sudo multipass exec lan-vm -- ip addr
 
           # Double check if virtual networks are working
           echo '******** host IPs ********'
           ip addr
 
           echo '******** router-vm IPs ********'
-          multipass exec router-vm -- sudo ip addr add 192.168.22.99/24 dev ens4
-          multipass exec router-vm -- sudo ip addr add 172.31.1.99/24 dev ens5
-          multipass exec router-vm -- ip addr
+          sudo multipass exec router-vm -- sudo ip addr add 192.168.22.99/24 dev ens4
+          sudo multipass exec router-vm -- sudo ip addr add 172.31.1.99/24 dev ens5
+          sudo multipass exec router-vm -- ip addr
 
           #multipass exec router-vm -- ping -c 1 192.168.22.1
-          multipass exec router-vm -- ping -c 1 172.31.1.2
+          sudo multipass exec router-vm -- ping -c 1 172.31.1.2
 
 
       #- name: Run tests
