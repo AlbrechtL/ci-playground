@@ -85,6 +85,8 @@ jobs:
           # Double check if virtual networks are working
           echo '******** host IPs ********'
           ip addr
+          sudo ufw status
+          sudo ufw disable
 
           echo '******** router-vm IPs ********'
           multipass exec router-vm -- sudo ip addr add 192.168.22.99/24 dev ens4
