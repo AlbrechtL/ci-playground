@@ -80,7 +80,7 @@ jobs:
           multipass exec wan-vm -- sudo iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE
           multipass exec wan-vm -- sudo sysctl -w net.ipv4.ip_forward=1
 
-          # Prepare WLAN VM
+          # Prepare LAN VM
           echo '******** lan-vm IPs ********'
           multipass exec lan-vm -- sudo ip addr add 172.31.1.2/24 dev ens4
           multipass exec lan-vm -- ip addr
