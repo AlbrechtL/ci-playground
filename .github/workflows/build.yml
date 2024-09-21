@@ -82,10 +82,14 @@ jobs:
           multipass exec lan-vm -- sudo ip addr add 172.31.1.2/24 dev ens4
           multipass exec lan-vm -- ip addr
 
-          # Some tests
-          multipass exec router-vm -- ip addr
+          # Double check if virtual networks are working
+          echo '******** host IPs ********'
+          ip addr
+
+          echo '******** router-vm IPs ********'
           multipass exec router-vm -- sudo ip addr add 192.168.22.99/24 dev ens4
           multipass exec router-vm -- sudo ip addr add 172.31.1.99/24 dev ens5
+          multipass exec router-vm -- ip addr
 
           multipass exec router-vm -- ping -c 1 192.168.22.1
           multipass exec router-vm -- ping -c 1 172.31.1.2
