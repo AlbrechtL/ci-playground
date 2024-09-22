@@ -68,7 +68,7 @@ jobs:
           multipass exec router-vm -- ip addr
 
           echo '******** router-vm USB support ********'
-          multipass exec router-vm -- sudo apt-get install linux-generic build-essential
+          multipass exec router-vm -- sudo apt-get -y install linux-generic build-essential
           multipass exec router-vm -- git clone https://github.com/AlbrechtL/USBIP-Virtual-USB-Device.git
           multipass exec router-vm -- cd USBIP-Virtual-USB-Device/c/ && make
           screen -L -d -m multipass exec router-vm  -- sudo USBIP-Virtual-USB-Device/c/cdc-ether -e 88:00:66:99:5b:aa -i ens3 -p 3242 -b 1-1
