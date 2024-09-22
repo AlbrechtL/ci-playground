@@ -39,8 +39,8 @@ jobs:
           multipass launch docker --network name=wannetvm,mac=06:00:00:11:22:33 --network name=lannetvm,mac=06:00:00:44:55:66 --name router-vm
           multipass mount $GITHUB_WORKSPACE router-vm
 
-          multipass launch --network wannetvm --name wan-vm
-          multipass launch --network lannetvm --name lan-vm
+          #multipass launch --network wannetvm --name wan-vm
+          #multipass launch --network lannetvm --name lan-vm
 
       - name: Show VM and and enviroments variables
         run:  |
@@ -67,37 +67,17 @@ jobs:
           echo '******** router-vm IPs ********'
           multipass exec router-vm -- ip addr
 
-          # Prepare WAN VM
-          echo '******** wan-vm IPs ********'
-          # Add IP address
-          multipass exec wan-vm -- sudo ip addr add 192.168.22.1/24 dev ens4
-          multipass exec wan-vm -- ip addr
-          # Install DHCP server
-          multipass exec wan-vm -- sudo sh -c 'apt-get update && apt-get install -y isc-dhcp-server && echo "default-lease-time 600;\nmax-lease-time 7200;\nsubnet 192.168.22.0 netmask 255.255.255.0 {\n  range 192.168.22.100 192.168.22.200;\n  option routers 192.168.22.1;\n  option domain-name-servers 8.8.8.8, 8.8.4.4;\n  option domain-name \"example.org\";\n}" > /etc/dhcp/dhcpd.conf && systemctl enable isc-dhcp-server && systemctl restart isc-dhcp-server'
-          multipass exec wan-vm -- cat /etc/dhcp/dhcpd.conf
-          # Enable NAT
-          multipass exec wan-vm -- sudo modprobe iptable_nat
-          multipass exec wan-vm -- sudo iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE
-          multipass exec wan-vm -- sudo sysctl -w net.ipv4.ip_forward=1
-
-          # Prepare LAN VM
-          echo '******** lan-vm IPs ********'
-          multipass exec lan-vm -- sudo ip addr add 172.31.1.2/24 dev ens4
-          multipass exec lan-vm -- ip addr
-
-          # Double check if virtual networks are working
-          echo '******** host IPs ********'
-          ip addr
-          sudo ufw status
-
-          echo '******** router-vm IPs ********'
-          multipass exec router-vm -- sudo ip addr add 192.168.22.99/24 dev ens4
-          multipass exec router-vm -- sudo ip addr add 172.31.1.99/24 dev ens5
+          echo '******** router-vm USB support ********'
+          multipass exec router-vm -- sudo apt-get install linux-generic build-essential
+          multipass exec router-vm -- git clone https://github.com/AlbrechtL/USBIP-Virtual-USB-Device.git
+          multipass exec router-vm -- cd USBIP-Virtual-USB-Device/c/ && make
+          screen -L -d -m multipass exec router-vm  -- sudo USBIP-Virtual-USB-Device/c/cdc-ether -e 88:00:66:99:5b:aa -i ens3 -p 3242 -b 1-1
+          sleep 1
+          cat screenlog.0
+          multipass exec router-vm -- sudo usbip --tcp-port 3242 attach -r 127.0.0.1 -b 1-1
+          sleep 5
+          multipass exec router-vm -- lsusb
           multipass exec router-vm -- ip addr
-
-          echo '******** Test connection between router-vm, lan-vm and wan-vm ********'
-          multipass exec router-vm -- ping -c 1 192.168.22.1 # to wan-vm
-          multipass exec router-vm -- ping -c 1 172.31.1.2 # to lan-vm
 
 
       - name: Run tests
