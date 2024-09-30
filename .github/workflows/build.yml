@@ -24,8 +24,10 @@ jobs:
         uses: anchore/sbom-action@v0
         with:
           image: albrechtloh/openwrt-docker:latest
+          upload-artifact: false
           format: cyclonedx-json
           artifact-name: alpine_sbom.json
+          output-file: .
 
       - name: Prepare OpenWrt rootfs
         run: |
@@ -46,6 +48,14 @@ jobs:
         uses: anchore/sbom-action@v0
         with:
           path: /mnt
+          upload-artifact: false
           format: cyclonedx-json
           artifact-name: openwrt_sbom.json
+          output-file: .
           
+      - name: Archive artifacts (SBOMs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SBOM
+          path: *.json
+          if-no-files-found: error
