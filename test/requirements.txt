@@ -1,3 +1,0 @@
-polling2
-pytest
-pytest-docker
