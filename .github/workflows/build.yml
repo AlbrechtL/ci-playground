@@ -27,7 +27,7 @@ jobs:
           upload-artifact: false
           format: cyclonedx-json
           artifact-name: alpine_sbom.json
-          output-file: sboms/
+          output-file: sboms
 
       - name: Prepare OpenWrt rootfs
         run: |
@@ -51,12 +51,13 @@ jobs:
           upload-artifact: false
           format: cyclonedx-json
           artifact-name: openwrt_sbom.json
-          output-file: sboms/
+          output-file: sboms
 
       - name: Look for SBOM files
         run: |
             find .
             export
+            cat sboms
 
       - name: Archive artifacts (SBOMs)
         uses: actions/upload-artifact@v4
