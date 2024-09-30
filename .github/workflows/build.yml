@@ -55,6 +55,27 @@ jobs:
         run: |
             find .
 
+      - name: get openwrt docker code (just for testing)
+        run: |
+          git clone https://github.com/AlbrechtL/openwrt-docker.git
+
+      - name: Generate web-frontend SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: openwrt-docker/web-frontend
+          upload-artifact: false
+          format: cyclonedx-json
+          output-file: web-frontend_sbom.json
+
+      - name: Generate web-backend SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: openwrt-docker/web-backend
+          upload-artifact: false
+          format: cyclonedx-json
+          output-file: web-backend_sbom.json
+
+
       - name: Archive artifacts (SBOMs)
         uses: actions/upload-artifact@v4
         with:
