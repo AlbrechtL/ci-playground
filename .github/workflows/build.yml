@@ -24,6 +24,8 @@ jobs:
         uses: anchore/sbom-action@v0
         with:
           image: albrechtloh/openwrt-docker:latest
+          format: cyclonedx-json
+          artifact-name: alpine_sbom.json
 
       - name: Prepare OpenWrt rootfs
         run: |
@@ -44,4 +46,6 @@ jobs:
         uses: anchore/sbom-action@v0
         with:
           path: /mnt
+          format: cyclonedx-json
+          artifact-name: openwrt_sbom.json
           
