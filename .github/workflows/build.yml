@@ -62,7 +62,7 @@ jobs:
       - name: Generate web-frontend SBOM
         uses: anchore/sbom-action@v0
         with:
-          path: openwrt-docker/web-frontend
+          path: openwrt-docker/web-frontend/mdl
           upload-artifact: false
           format: cyclonedx-json
           output-file: web-frontend_sbom.json
