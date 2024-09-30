@@ -28,7 +28,7 @@ jobs:
       - name: Prepare OpenWrt rootfs
         run: |
           # Run OpenWrt container for some time to install additional IPKs
-          timeout 60 docker compose up
+          timeout --preserve-status 30 docker compose up
 
           # Get image from volume
           IMAGE=$(cat /var/lib/docker/volumes/openwrt-docker_data/_data/current_version)
