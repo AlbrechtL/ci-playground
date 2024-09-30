@@ -33,6 +33,7 @@ jobs:
           set -e # Revert set +e
 
           # Get image from volume
+          sudo find /var/lib/docker/volumes/
           IMAGE=$(sudo cat /var/lib/docker/volumes/openwrt-docker_data/_data/current_version)
           echo $IMAGE
 
