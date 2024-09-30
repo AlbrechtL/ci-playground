@@ -50,7 +50,12 @@ jobs:
           upload-artifact: false
           format: cyclonedx-json
           artifact-name: openwrt_sbom.json
-          
+
+      - name: Look for SBOM files
+        run: |
+            find .
+            export
+
       - name: Archive artifacts (SBOMs)
         uses: actions/upload-artifact@v4
         with:
