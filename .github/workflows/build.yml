@@ -33,11 +33,11 @@ jobs:
           set -e # Revert set +e
 
           # Get image from volume
-          IMAGE=$(cat /var/lib/docker/volumes/openwrt-docker_data/_data/current_version)
+          sudo IMAGE=$(cat /var/lib/docker/volumes/openwrt-docker_data/_data/current_version)
           echo $IMAGE
 
           # Mount volume
-          mount /var/lib/docker/volumes/openwrt-docker_data/_data/$IMAGE /mnt
+          sudo mount /var/lib/docker/volumes/openwrt-docker_data/_data/$IMAGE /mnt
 
       - name: Generate OpenWrt SBOM
         uses: anchore/sbom-action@v0
