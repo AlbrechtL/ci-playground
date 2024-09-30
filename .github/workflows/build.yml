@@ -34,11 +34,11 @@ jobs:
 
           # Get image from volume
           sudo find /var/lib/docker/volumes/
-          IMAGE=$(sudo cat /var/lib/docker/volumes/openwrt-docker_data/_data/current_version)
+          IMAGE=$(sudo cat /var/lib/docker/volumes/ci-playground_data/_data/current_version)
           echo $IMAGE
 
           # Mount volume
-          sudo mount /var/lib/docker/volumes/openwrt-docker_data/_data/$IMAGE /mnt
+          sudo mount /var/lib/docker/volumes/ci-playground_data/_data/$IMAGE /mnt
 
       - name: Generate OpenWrt SBOM
         uses: anchore/sbom-action@v0
