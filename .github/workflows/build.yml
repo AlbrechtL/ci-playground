@@ -58,6 +58,6 @@ jobs:
       - name: Archive artifacts (SBOMs)
         uses: actions/upload-artifact@v4
         with:
-          name: SBOM
+          name: Software Bill of Material (SBOM)
           path: ./*.json
           if-no-files-found: error
