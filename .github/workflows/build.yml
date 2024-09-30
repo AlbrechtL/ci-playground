@@ -17,11 +17,28 @@ jobs:
       #      sudo udevadm control --reload-rules
       #      sudo udevadm trigger --name-match=kvm
 
-      - uses: anchore/sbom-action@v0
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate alpine SBOM
+        uses: anchore/sbom-action@v0
         with:
           image: albrechtloh/openwrt-docker:latest
 
-      - name: OpenWrt SBOM generation
+      - name: Prepare OpenWrt rootfs
         run: |
-          echo "BLA BLA BLA"
+          # Run OpenWrt container for some time to install additional IPKs
+          timeout 60 docker compose up
+
+          # Get image from volume
+          IMAGE=$(cat /var/lib/docker/volumes/openwrt-docker_data/_data/current_version)
+          echo $IMAGE
+
+          # Mount volume
+          mount /var/lib/docker/volumes/openwrt-docker_data/_data/$IMAGE /mnt
+
+      - name: Generate OpenWrt SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: /mnt
           
