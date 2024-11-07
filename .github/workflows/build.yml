@@ -1,9 +1,11 @@
-name: Build
+name: OpenWrt 24.10-SNAPSHOT build
 
 on:
   push:
     branches:
       - master
+  schedule:
+    - cron: '* 4 * * *'
 
 jobs:
   build:
@@ -64,6 +66,7 @@ jobs:
           DOCKER_BUILD_SUMMARY: false
           DOCKER_BUILD_RECORD_UPLOAD: false
         with:
+          context: . # TODO: Just for testing
           tags: localhost:5000/local/openwrt-docker:latest
           outputs: type=docker,dest=/tmp/openwrt-docker-image.tar
 
