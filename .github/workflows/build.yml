@@ -1,4 +1,4 @@
-name: Actions CI
+name: Build
 
 on:
   push:
@@ -7,78 +7,125 @@ on:
 
 jobs:
   build:
-    name: SBOM generation
+    name: Build
     runs-on: ubuntu-latest
-    
-    steps:
-      #- name: Enable KVM group perms
-      #  run: |
-      #      echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-      #      sudo udevadm control --reload-rules
-      #      sudo udevadm trigger --name-match=kvm
+    env:
+      OPENWRT_VERSION: 24.10-SNAPSHOT
 
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+
+    steps:
       - name: Checkout
         uses: actions/checkout@v4
+        repository: albrechtL/openwrt-docker
 
-      - name: Generate alpine SBOM
-        uses: anchore/sbom-action@v0
-        with:
-          image: albrechtloh/openwrt-docker:latest
-          upload-artifact: false
-          format: cyclonedx-json
-          output-file: alpine_sbom.json
-
-      - name: Prepare OpenWrt rootfs
+      - name: Set environment variables
         run: |
-          # Run OpenWrt container for some time to install additional IPKs
-          set +e # Enable that the next command can fail
-          timeout --preserve-status 30 docker compose up
-          set -e # Revert set +e
+          echo "GIT_HASH=`git rev-parse --short HEAD`" >> $GITHUB_ENV
+          cat $GITHUB_ENV
 
-          # Get image from volume
-          sudo find /var/lib/docker/volumes/
-          IMAGE=$(sudo cat /var/lib/docker/volumes/ci-playground_data/_data/current_version)
-          echo $IMAGE
-
-          # Mount volume
-          sudo mount /var/lib/docker/volumes/ci-playground_data/_data/$IMAGE /mnt
-
-      - name: Generate OpenWrt SBOM
-        uses: anchore/sbom-action@v0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          path: /mnt
-          upload-artifact: false
-          format: cyclonedx-json
-          output-file: openwrt_sbom.json
+          driver-opts: network=host # Important to access local Docker registry
 
-      - name: Look for SBOM files
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
+        with:
+          context: .
+          push: true
+          provenance: false
+          platforms: |
+            linux/x86_64
+            linux/arm64
+          build-args: | 
+            OPENWRT_VERSION=${{ env.OPENWRT_VERSION }}
+            BUILDKIT_MULTI_PLATFORM=1
+          tags: |
+            localhost:5000/local/openwrt-docker:latest
+
+      - name: Inspect
         run: |
-            find .
+          docker buildx imagetools inspect localhost:5000/local/openwrt-docker:latest
 
-      - name: get openwrt docker code (just for testing)
-        run: |
-          git clone https://github.com/AlbrechtL/openwrt-docker.git
-
-      - name: Generate web-frontend SBOM
-        uses: anchore/sbom-action@v0
+      - name: Build and export
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_SUMMARY: false
+          DOCKER_BUILD_RECORD_UPLOAD: false
         with:
-          path: openwrt-docker/web-frontend/mdl
-          upload-artifact: false
-          format: cyclonedx-json
-          output-file: web-frontend_sbom.json
+          tags: localhost:5000/local/openwrt-docker:latest
+          outputs: type=docker,dest=/tmp/openwrt-docker-image.tar
 
-      - name: Generate web-backend SBOM
-        uses: anchore/sbom-action@v0
-        with:
-          path: openwrt-docker/web-backend
-          upload-artifact: false
-          format: cyclonedx-json
-          output-file: web-backend_sbom.json
-
-
-      - name: Archive artifacts (SBOMs)
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Software Bill of Material (SBOM)
-          path: ./*.json
+          name: OpenWrt Docker Image
+          path: /tmp/openwrt-docker-image.tar
+
+      - name: Login to Weidmueller wmucdev
+        uses: docker/login-action@v3
+        with:
+          registry: wmucdev.azurecr.io
+          username: ${{ secrets.WMUCDEV_USERNAME }}
+          password: ${{ secrets.WMUCDEV_TOKEN }}
+
+      - name: Create Weidmueller u-OS app
+        id: create_u-os-app
+        run: |
+          # uc-aom-packager accept only version that has to be greater than the previous one. Lets use the datetime to ensure that.
+          DATETIME=$(date "+%Y%m%d%H%M%S")
+
+          # uc-aom-packager allow only decimal numbers as version number for an unkonwn reason
+          # see https://github.com/weidmueller/uc-addon/blob/main/uc-manifest.schema-doc.md#version)
+          # So lets convert the git hash into a decimal value
+          GIT_HASH_DECIMAL=$((16#$GIT_HASH))
+
+          # Create app version
+          APP_VERSION=$OPENWRT_VERSION.$DATETIME-$GIT_HASH_DECIMAL
+
+          echo "***** Create manifest from template *****"
+          mv u-os-app/manifest.json.template u-os-app/manifest.json
+          sed -i 's/APPVERSION_TO_INSERT/'"$APP_VERSION"'/g' u-os-app/manifest.json
+          cat u-os-app/manifest.json | grep version
+        
+          echo "***** Run uc-aom-packager to create the u-OS app *****"
+          # uc-aom-packager accepts only multiarch images. "--build-arg BUILDKIT_MULTI_PLATFORM=1" has to set to ensure that.
+          # uc-aom-packager needs to Docker registry credentials in a clear text file. Because of security concerns we use a local registry without credentials here.
+
+          docker run --rm --network=host --pull=always \
+          --mount src=$(pwd)/u-os-app,target=/tmp/u-os-app-openwrt,type=bind wmucdev.azurecr.io/u-control/uc-aom-packager:0 \
+          uc-aom-packager push \
+          -m /tmp/u-os-app-openwrt \
+          -s /tmp/u-os-app-openwrt/source-credentials.json \
+          -t /tmp/u-os-app-openwrt/target-credentials.json \
+          -v
+
+          echo "***** Create SWU app file*****"
+          docker run --rm --network=host --pull=always \
+          --mount src=$(pwd)/u-os-app,target=/tmp/u-os-app-openwrt,type=bind wmucdev.azurecr.io/u-control/uc-aom-packager:0 \
+          uc-aom-packager \
+          export \
+          -t /tmp/u-os-app-openwrt/target-credentials.json \
+          --version $APP_VERSION \
+          -o /tmp/u-os-app-openwrt/u-os-app-openwrt_$APP_VERSION.swu \
+          -v
+
+          find u-os-app/
+
+      - name: Archive artifacts (OpenWrt u-OS app)
+        if: always() && steps.create_u-os-app.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenWrt u-OS app
+          path: u-os-app/u-os-app-openwrt_*.swu/linux-arm64/*.swu
           if-no-files-found: error
