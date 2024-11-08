@@ -179,3 +179,69 @@ jobs:
         run: |
           multipass exec router-vm -- docker load --input openwrt-docker-image.tar
           multipass exec router-vm -- docker image ls -a
+    
+      - name: Prepare VMs
+        run: |
+          # By default portainer is running at port 9000. But we need port 9000
+          multipass exec router-vm -- docker stop portainer
+
+          # Install python
+          multipass exec router-vm -- sudo apt-get -y install python3-pip python-is-python3
+
+          # Install everthing for pytest
+          multipass exec router-vm -- find .
+          #multipass exec router-vm -- export PATH=$PATH:~/.local/bin # not working
+          multipass exec router-vm -- pip install -r test/requirements.txt
+          
+          echo '******** router-vm IPs ********'
+          multipass exec router-vm -- ip addr
+
+          # Prepare WAN VM
+          echo '******** wan-vm IPs ********'
+          # Add IP address
+          multipass exec wan-vm -- sudo ip addr add 192.168.22.1/24 dev ens4
+          multipass exec wan-vm -- ip addr
+          # Install DHCP server
+          multipass exec wan-vm -- sudo sh -c 'apt-get update && apt-get install -y isc-dhcp-server && echo "default-lease-time 600;\nmax-lease-time 7200;\nsubnet 192.168.22.0 netmask 255.255.255.0 {\n  range 192.168.22.100 192.168.22.200;\n  option routers 192.168.22.1;\n  option domain-name-servers 8.8.8.8, 8.8.4.4;\n  option domain-name \"example.org\";\n}" > /etc/dhcp/dhcpd.conf && systemctl enable isc-dhcp-server && systemctl restart isc-dhcp-server'
+          multipass exec wan-vm -- cat /etc/dhcp/dhcpd.conf
+          # Enable NAT
+          multipass exec wan-vm -- sudo modprobe iptable_nat
+          multipass exec wan-vm -- sudo iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE
+          multipass exec wan-vm -- sudo sysctl -w net.ipv4.ip_forward=1
+
+          # Prepare LAN VM
+          echo '******** lan-vm IPs ********'
+          multipass exec lan-vm -- sudo ip addr add 172.31.1.2/24 dev ens4
+          multipass exec lan-vm -- sudo ip addr add 172.31.22.2/24 dev ens4
+          multipass exec lan-vm -- ip addr
+
+          # Double check if virtual networks are working
+          echo '******** host IPs ********'
+          ip addr
+          sudo ufw status
+
+          echo '******** router-vm IPs ********'
+          multipass exec router-vm -- sudo ip addr add 192.168.22.99/24 dev ens4
+          multipass exec router-vm -- sudo ip addr add 172.31.22.99/24 dev ens5
+          multipass exec router-vm -- ip addr
+
+          echo '******** Test connection between router-vm, lan-vm and wan-vm ********'
+          multipass exec router-vm -- ping -c 1 192.168.22.1 # to wan-vm
+          multipass exec router-vm -- ping -c 1 172.31.22.2 # to lan-vm
+
+
+      - name: Run tests
+        run: |
+          # Use local image instead of hub.docker.com
+          multipass exec router-vm -- sed -i 's/image: albrechtloh\/openwrt-docker:latest/image: openwrt-docker/g' test/tests/docker-compose.yml.template
+
+          # Run pytest
+          multipass exec router-vm -- sh -c 'cd test/ && ~/.local/bin/pytest -v -s --html=report.html --self-contained-html'
+
+      - name: Archive test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test report
+          path: test/*.html
+          if-no-files-found: error
