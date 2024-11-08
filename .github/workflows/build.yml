@@ -142,7 +142,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: albrechtL/openwrt-docker
-          
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -234,12 +234,13 @@ jobs:
           multipass exec router-vm -- ping -c 1 192.168.22.1 # to wan-vm
           multipass exec router-vm -- ping -c 1 172.31.22.2 # to lan-vm
 
+      - name: Prepare tests
+        run: |
+          # Use local image instead of hub.docker.com
+          sed -i 's/image: albrechtloh\/openwrt-docker:latest/image: openwrt-docker/g' test/tests/docker-compose.yml.template
 
       - name: Run tests
         run: |
-          # Use local image instead of hub.docker.com
-          multipass exec router-vm -- sed -i 's/image: albrechtloh\/openwrt-docker:latest/image: openwrt-docker/g' test/tests/docker-compose.yml.template
-
           # Run pytest
           multipass exec router-vm -- sh -c 'cd test/ && ~/.local/bin/pytest -v -s --html=report.html --self-contained-html'
 
