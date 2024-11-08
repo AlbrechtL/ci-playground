@@ -49,7 +49,8 @@ jobs:
           provenance: false
           platforms: |
             linux/x86_64
-          build-args: | 
+            linux/arm64
+          build-args: |
             OPENWRT_VERSION=${{ env.OPENWRT_VERSION }}
             BUILDKIT_MULTI_PLATFORM=1
           tags: |
