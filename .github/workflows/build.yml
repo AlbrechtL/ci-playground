@@ -54,20 +54,11 @@ jobs:
             BUILDKIT_MULTI_PLATFORM=1
           tags: |
             localhost:5000/local/openwrt-docker:latest
+          outputs: type=docker,dest=/tmp/openwrt-docker-image.tar
 
       - name: Inspect
         run: |
           docker buildx imagetools inspect localhost:5000/local/openwrt-docker:latest
-
-      - name: Build and export
-        uses: docker/build-push-action@v6
-        env:
-          DOCKER_BUILD_SUMMARY: false
-          DOCKER_BUILD_RECORD_UPLOAD: false
-        with:
-          context: . # TODO: Just for testing
-          tags: openwrt-docker:latest
-          outputs: type=docker,dest=/tmp/openwrt-docker-image.tar
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
