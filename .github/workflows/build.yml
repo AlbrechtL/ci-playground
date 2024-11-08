@@ -67,6 +67,7 @@ jobs:
         with:
           context: . # TODO: Just for testing
           tags: openwrt-docker:latest
+          build-args: OPENWRT_VERSION=${{ env.OPENWRT_VERSION }}
           outputs: type=docker,dest=/tmp/openwrt-docker-image.tar
 
       - name: Upload artifact
