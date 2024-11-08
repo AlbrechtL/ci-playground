@@ -238,9 +238,11 @@ jobs:
         run: |
           # Use local image instead of hub.docker.com
           sed -i 's/image: albrechtloh\/openwrt-docker:latest/image: openwrt-docker/g' test/tests/docker-compose.yml.template
+          cat test/tests/docker-compose.yml.template
 
       - name: Run tests
         run: |
+          cat test/tests/docker-compose.yml.template
           # Run pytest
           multipass exec router-vm -- sh -c 'cd test/ && ~/.local/bin/pytest -v -s --html=report.html --self-contained-html'
 
