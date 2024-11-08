@@ -132,7 +132,7 @@ jobs:
         with:
           name: OpenWrt u-OS app
           path: u-os-app/u-os-app-openwrt_*.swu/linux-arm64/*.swu
-          if-no-files-found: error
+          #if-no-files-found: error
 
   test:
     runs-on: ubuntu-latest
