@@ -142,9 +142,40 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: OpenWrt Docker Image
-          path: /tmp
-      
+          path: .
+
+      - name: Install VMs
+        run: |
+          set -x
+          sudo snap install multipass --edge # Edge is necessary to get 1.15 dev because of networks support
+          sudo chmod a+w /var/snap/multipass/common/multipass_socket # Fix 'multipass socket access denied'
+          multipass find
+
+          # Set up some bridges for the VMs
+          sudo ip link add lannetvm type bridge
+          sudo ip link add wannetvm type bridge
+          sudo ip link set dev lannetvm up
+          sudo ip link set dev wannetvm up
+          ip addr
+
+          # We need to disable the firewall otherwise the tap devices are not working properly
+          sudo ufw disable
+
+          # Start VMs
+          # Multipass and the OpenWrt container are using the same MAC QUI 52:54:00 which creates error. Let's use differnet MAC addresses here
+          multipass launch docker --network name=wannetvm,mac=06:00:00:11:22:33 --network name=lannetvm,mac=06:00:00:44:55:66 --name router-vm
+          multipass mount $GITHUB_WORKSPACE router-vm
+
+          multipass launch --network wannetvm --name wan-vm
+          multipass launch --network lannetvm --name lan-vm
+
+      - name: Show VM and and environments variables
+        run:  |
+          export
+          multipass exec router-vm -- lsb_release -a
+          multipass info
+
       - name: Load image
         run: |
-          docker load --input /tmp/openwrt-docker-image.tar
-          docker image ls -a          
+          multipass exec router-vm -- docker load --input openwrt-docker-image.tar
+          multipass exec router-vm -- docker image ls -a
